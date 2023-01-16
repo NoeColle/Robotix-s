@@ -18,6 +18,8 @@
 
 // ----- Statics -----
 
+int PinInterruptionStop = 25 ; //GPIO d'interruption pour l'arret du robot
+
 Stepper MoteurDroit(36, 35);   // STEP at pin 36, DIR at pin 35
 Stepper MoteurGauche(23, 22);  // STEP at pin 23, DIR at pin 22
 
@@ -54,6 +56,9 @@ void setup() {
     .setAcceleration(30000);  // stp/s^2    valeur max:  50000 @12V ~ 150000 @24V
 
   delay(1000); //Délai de début nécessaire pour laisser le temps au drivers moteurs de tirer le courant 
+  // Setup interruption STOP
+  pinMode(PinInterruptionStop, uint8_t mode)
+  attachInterrupt(digitalPinToInterrupt(pin), InterruptSTOP, RISING);  
 }
 
 
@@ -64,8 +69,8 @@ void loop() {
 
   //---------
 
-  Demo();
-  delay(15000);
+ // Demo();
+ // delay(15000);
 
   //---------
 
@@ -122,6 +127,13 @@ struct StepsMoteurs DegreeToStep(int Degree) {
   return StepsACalculer;
 }
 
+void InterruptSTOP()
+{
+//Eventuellement lancer une erreur, print, une variable qui permet de relancer une nouvelle commande ?
+stop(); //fonction fournie par la lib Teensystep
+//emergencyStop(); //meme fonction que stop mais plus violent: sans ralentir rien, juste ca coupe direct. necessite de "reset" le robot.
+}
+
 // Fonction qui s'exécute à chaque fois que des données sont reçues du maître.
 // cette fonction est enregistrée comme un événement, voir setup()
 void receiveEvent (int howMany)
@@ -141,6 +153,8 @@ if(howMany == 2)
 
  }  
 
+// !!!!! BUG/FIX !!!!! cette fonction ne "marche pas" dans le sens ou les data sont bien recues mais le robot d'effectue pas les action:
+// est ce car cette fonction est appelée à partir d'un evenement (interruption) et est en dehors donc perd de sa "priorité"? piste a explorer. 
 void DataToAction (int Data) {
   struct StepsMoteurs StepsMouvement; //déclaration locale de la structure de mouvements  
 
