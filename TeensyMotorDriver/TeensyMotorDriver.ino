@@ -18,7 +18,8 @@
 
 // ----- Statics -----
 
-int PinInterruptionStop = 25 ; //GPIO d'interruption pour l'arret du robot
+int PinInterruptionStop = 24 ; //GPIO d'interruption pour l'arret du robot
+int PinInterruptionStop2 = 25 ; //GPIO d'interruption pour l'arret du robot
 
 Stepper MoteurDroit(36, 35);   // STEP at pin 36, DIR at pin 35
 Stepper MoteurGauche(23, 22);  // STEP at pin 23, DIR at pin 22
@@ -57,8 +58,10 @@ void setup() {
 
   delay(1000); //Délai de début nécessaire pour laisser le temps au drivers moteurs de tirer le courant 
   // Setup interruption STOP
-  pinMode(PinInterruptionStop, uint8_t mode)
-  attachInterrupt(digitalPinToInterrupt(pin), InterruptSTOP, RISING);  
+  pinMode(PinInterruptionStop, INPUT);
+  pinMode(PinInterruptionStop2, INPUT);
+  attachInterrupt(digitalPinToInterrupt(PinInterruptionStop), InterruptSTOP, RISING);  
+  attachInterrupt(digitalPinToInterrupt(PinInterruptionStop2), InterruptSTOP, RISING);  
 }
 
 
@@ -74,17 +77,21 @@ void loop() {
 
   //---------
 
-  // struct StepsMoteurs StepsMouvement; //déclaration locale de la structure de mouvements
-  // StepsMouvement = DegreeToStep(90) ; //calculs de steps
+   struct StepsMoteurs StepsMouvement; //déclaration locale de la structure de mouvements
+   
+   //StepsMouvement = DegreeToStep(90) ; //calculs de steps
+   //MoteurGauche.setTargetRel(StepsMouvement.StepsMoteurGauche);  // Set target position
+   //MoteurDroit.setTargetRel(StepsMouvement.StepsMoteurDroit);  // Set target position
+   //controller.move(MoteurGauche,MoteurDroit);    // Do the move
 
-  // MoteurGauche.setTargetRel(StepsMouvement.StepsMoteurGauche);  // Set target position
-  // MoteurDroit.setTargetRel(StepsMouvement.StepsMoteurDroit);  // Set target position
-  // controller.move(MoteurGauche,MoteurDroit);    // Do the move
+   //delay(500);
 
-  //   StepsMouvement = MilliToStep(100) ; //calculs de steps
-  // MoteurGauche.setTargetRel(StepsMouvement.StepsMoteurGauche);  // Set target position
-  // MoteurDroit.setTargetRel(StepsMouvement.StepsMoteurDroit);  // Set target position
-  // controller.move(MoteurGauche,MoteurDroit);    // Do the move
+   StepsMouvement = MilliToStep(2000) ; //calculs de steps
+   MoteurGauche.setTargetRel(StepsMouvement.StepsMoteurGauche);  // Set target position
+   MoteurDroit.setTargetRel(StepsMouvement.StepsMoteurDroit);  // Set target position
+   controller.move(MoteurGauche,MoteurDroit);    // Do the move
+
+   delay(500);
 
   //---------
 }
@@ -126,12 +133,16 @@ struct StepsMoteurs DegreeToStep(int Degree) {
 
   return StepsACalculer;
 }
-
+void restart()
+{
+  delay(5000); // cette fonction attends juste 5s et est appelée par une interruption => delay dans une interruption ne marche pas
+}
 void InterruptSTOP()
 {
 //Eventuellement lancer une erreur, print, une variable qui permet de relancer une nouvelle commande ?
-stop(); //fonction fournie par la lib Teensystep
-//emergencyStop(); //meme fonction que stop mais plus violent: sans ralentir rien, juste ca coupe direct. necessite de "reset" le robot.
+controller.stopAsync() ; //fonction fournie par la lib Teensystep
+//restart();
+//controller.emergencyStop(); //meme fonction que stop mais plus violent: sans ralentir rien, juste ca coupe direct. necessite de "reset" le robot.
 }
 
 // Fonction qui s'exécute à chaque fois que des données sont reçues du maître.
@@ -202,11 +213,11 @@ void DataToAction (int Data) {
   }  
   else if(Data >= 50000 && Data < 60000) // STOP
   {
-    void stop();
+    controller.stop();
   }  
   else if(Data >= 60000) // EMERGENCYSTOP
   {
-    void emergencyStop();
+    controller.emergencyStop();
   }  
 }
 
