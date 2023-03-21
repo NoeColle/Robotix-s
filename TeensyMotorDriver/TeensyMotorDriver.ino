@@ -44,7 +44,7 @@ struct StepsMoteurs {
 
 void setup() {
   // Setup communication
-  Wire2.begin(4);                 // join i2c bus with address #4
+  Wire2.begin(0x0a);                 // join i2c bus with address #4
   Wire2.onReceive(receiveEvent);  // register event
   Serial.begin(9600);            // start serial for output
   // Setup Moteurs Teensystep lib                                
@@ -147,22 +147,23 @@ controller.stopAsync() ; //fonction fournie par la lib Teensystep
 
 // Fonction qui s'exécute à chaque fois que des données sont reçues du maître.
 // cette fonction est enregistrée comme un événement, voir setup()
-void receiveEvent (int howMany)
- {
-if(howMany == 2)
+
+void receiveEvent(int howMany)
+{
+  if (howMany == 3) // Vérifiez si 3 bytes sont reçus
   {
-    uint16_t DataReceived  = Wire2.read() << 8; 
-    DataReceived |= Wire2.read();
-    //Serial.println(DataReceived);
+    Wire2.read(); // Ignorer le premier byte de registre
+    uint16_t DataReceived = Wire2.read(); 
+    DataReceived |= Wire2.read() << 8; // Inverser l'ordre des bytes
+    Serial.println(DataReceived);
     DataToAction(DataReceived);
   }
-    else
+  else
   {
     Serial.print("Unexpected number of bytes received: ");
     Serial.println(howMany);
   }
-
- }  
+}
 
 // !!!!! BUG/FIX !!!!! cette fonction ne "marche pas" dans le sens ou les data sont bien recues mais le robot d'effectue pas les action:
 // est ce car cette fonction est appelée à partir d'un evenement (interruption) et est en dehors donc perd de sa "priorité"? piste a explorer. 
